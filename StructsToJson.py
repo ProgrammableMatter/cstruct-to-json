@@ -24,6 +24,10 @@ def traverseStructMembersDF(structs, nativeTypesToSize, enumTypesToValue, rootSt
         structSubDeclTypeName = StructDeclVisitor.getStructTypeName(structSubDecl)
         structSubDeclName = structSubDecl.name
 
+        dimension = None
+        if hasattr(structSubDecl.type, "dim"):
+            dimension = int(structSubDecl.type.dim.value)
+
         if structSubDeclTypeName in nativeTypesToSize.keys() or \
                         structSubDeclTypeName in enumTypesToValue.keys():  # on enum/native type
 
@@ -31,19 +35,18 @@ def traverseStructMembersDF(structs, nativeTypesToSize, enumTypesToValue, rootSt
             if structSubDecl.bitsize != None:
                 bitSize = structSubDecl.bitsize.value
 
-            dimension = None
-            if hasattr(structSubDecl.type, "dim"):
-                try:
-                    dimension = int(structSubDecl.type.dim.value)
-                except:
-                    pass
-
             callback(prefix, structSubDeclName, prefix + "." + structSubDeclName, structSubDeclTypeName, bitSize,
                      dimension)
         else:  # on struct type
-            traverseStructMembersDF(structs, nativeTypeToSize, enumTypesToValue,
-                                    rootStructName=structSubDeclTypeName, callback=callback,
-                                    prefix=prefix + "." + structSubDeclName)
+            if dimension != None :
+                for dim in range(dimension):
+                    traverseStructMembersDF(structs, nativeTypeToSize, enumTypesToValue,
+                                        rootStructName=structSubDeclTypeName, callback=callback,
+                                        prefix=prefix + "." + structSubDeclName + "["+ str(dim) +"]")
+            else:
+                traverseStructMembersDF(structs, nativeTypeToSize, enumTypesToValue,
+                                        rootStructName=structSubDeclTypeName, callback=callback,
+                                        prefix=prefix + "." + structSubDeclName)
 
 
 class FieldDescription:
@@ -157,28 +160,8 @@ class LinearStructComposer:
                     if currentBitFieldPath == description.getFieldPath():
                         self.__createDescriptionDictIfNotAvailable(description.getFieldPath())
                         self.aggregatedLinearFields[description.getFieldPath()][description.getStartBit()] = description
-                        if description.getStartBit() == 0:
+                        if description.getFieldPath() != currentBitFieldPath:
                             currentBitFieldPath = None
-
-
-
-
-        # fieldPathsWithBitFields = {}
-        # for description in self.linearFields:
-        #     if description.getStartBit() != 0:
-        #         fieldPathsWithBitFields[description.getFieldPath()] = None
-        #
-        # for description in self.linearFields:
-        #     if description.getFieldPath() in fieldPathsWithBitFields:
-        #         if description.getFieldPath() not in self.aggregatedLinearFields:
-        #             self.aggregatedLinearFields[description.getFieldPath()] = OrderedDict()
-        #
-        #         lastFieldDescription = self.aggregatedLinearFields[description.getFieldPath()]
-        #         lastFieldDescription[description.getStartBit()] = description
-        #     else:
-        #         dd = OrderedDict()
-        #         dd[description.getStartBit()] = description
-        #         self.aggregatedLinearFields[description.getDescription()] = dd
 
 
 if __name__ == "__main__":
@@ -218,7 +201,7 @@ if __name__ == "__main__":
     for fieldPath in reversed(composer.aggregatedLinearFields.keys()):
         print ("%s" % fieldPath)
         fieldDescriptions = composer.aggregatedLinearFields[fieldPath]
-        for startBitPosition in fieldDescriptions:
+        for startBitPosition in reversed(fieldDescriptions.keys()):
             print(" -- %s %s" % (startBitPosition, fieldDescriptions[startBitPosition]))
 
     # Todo:
