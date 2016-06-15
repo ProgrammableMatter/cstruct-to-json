@@ -3,20 +3,32 @@ import sys
 import config.SourceConfig as sourceConfig
 from ParseCTypes import CTypesParser, EnumDeclVisitor
 
+class EnumsToJson:
+    def __init__(self):
+        ctp = CTypesParser(sourceConfig)
+        parsedEnums = ctp.getEntities(EnumDeclVisitor())
+
+        self.enums = {}
+        self.enums["enums"] = {}
+        self.enums["enums"]["StateType"] = []
+
+        for enum in parsedEnums:
+            self.enums["enums"][enum] = []
+            for enumerator in parsedEnums[enum]:
+                self.enums["enums"][enum].append(enumerator.name)
+
+    def show(self):
+        print(json.dumps(self.enums, sort_keys=False, indent=2, separators=(',', ': ')))
+
+    def getAsObject(self):
+        return self.enums
+
+    def getEnumNames(self):
+        return self.enums["enums"].keys()
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        sourceConfig.sourceRoots = [sys.argv[1]]
+    etj = EnumsToJson()
+    etj.show()
 
-    ctp = CTypesParser(sourceConfig)
-    enums =  ctp.getEntities(EnumDeclVisitor())
 
-    Enums = {}
-    Enums["enums"] = {}
-    Enums["enums"]["StateType"] = []
 
-    for enum in enums:
-        Enums["enums"][enum] = []
-        for e in enums[enum]:
-            Enums["enums"][enum].append(e.name)
-
-    print(json.dumps(Enums, sort_keys=False, indent=2, separators=(',', ': ')))
