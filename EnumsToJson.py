@@ -1,14 +1,16 @@
 import json
-import sys
+from collections import OrderedDict
+
 import config.SourceConfig as sourceConfig
-from ParseCTypes import CTypesParser, EnumDeclVisitor
+from parsing.ParseCTypes import CTypesParser, EnumDeclVisitor
+
 
 class EnumsToJson:
     def __init__(self):
         ctp = CTypesParser(sourceConfig)
         parsedEnums = ctp.getEntities(EnumDeclVisitor())
 
-        self.enums = {}
+        self.enums = OrderedDict()
         self.enums["enums"] = {}
         self.enums["enums"]["StateType"] = []
 
@@ -20,7 +22,7 @@ class EnumsToJson:
     def show(self):
         print(json.dumps(self.enums, sort_keys=False, indent=2, separators=(',', ': ')))
 
-    def getAsObject(self):
+    def getObject(self):
         return self.enums
 
     def getEnumNames(self):

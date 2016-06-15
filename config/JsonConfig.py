@@ -1,25 +1,15 @@
 import json
+from collections import OrderedDict
 
-SizeofTypes = {
-    # data type size bytes to be interpreted
-    "sizeofTypes": {
-        "enum": 2,
-        # evaluates to StateType enum names
-        "StateType": 2,
-        # evaluates to NodeType enum names
-        "NodeType": 2,
-        # evaluates to XmissonType enum names
-        "XmissionType": 2
-    }
-}
+DefaultStructByteSize = 2
 
-Labels = {
+Labels = OrderedDict({
     "labels": {
         "globalStateBase": 96
     }
-}
+})
 
-HardwareRegisters = {
+HardwareRegisters = OrderedDict({
     "structs": {
         # /* state in register of pin (input) A  */
         "A.in": [
@@ -72,7 +62,7 @@ HardwareRegisters = {
         # /* state in register of pin (input) C  */
         "C.in": [
             {
-                "property": "(C7  | C6 | C5 | NRTH_SW | C3 | TP1 | C1 | NRTH_TX)",
+                "property": "(C7 | C6 | C5 | NRTH_SW | C3 | TP1 | C1 | NRTH_TX)",
                 "type": "bit",
                 "address": 51
             }
@@ -80,7 +70,7 @@ HardwareRegisters = {
         # /* state in direction register of port C */
         "C.dir": [
             {
-                "property": "(C7  | C6 | C5 | NRTH_SW | C3 | TP1 | C1 | NRTH_TX)",
+                "property": "(C7 | C6 | C5 | NRTH_SW | C3 | TP1 | C1 | NRTH_TX)",
                 # /* how to print the port value */
                 "type": "bit",
                 "address": 52
@@ -89,7 +79,7 @@ HardwareRegisters = {
         # /* state in register of port (output) C  */
         "C.out": [
             {
-                "property": "(C7  | C6 | C5 | NRTH_SW | C3 | TP1 | C1 | NRTH_TX)",
+                "property": "(C7 | C6 | C5 | NRTH_SW | C3 | TP1 | C1 | NRTH_TX)",
                 "type": "bit",
                 "address": 53
             }
@@ -311,9 +301,35 @@ HardwareRegisters = {
             }
         ],
     }
+})
+
+NativeTypeToSimulatorType = {
+    "bitfield": "bit",
+    # 1byte
+    "uint8_t": "unsigned",
+    "int8_t": "signed",
+    "hex": "hex",
+    # 2 byte
+    "uint16_t": "unsigned int",
+    "int16_t": "signed int",
+    # 1 byte as bit field
+    "bitfield": "bit",
+    # 1 byte as char
+    "char": "char",
+    # 2 byte as hex
+    "dhex": "dhex",
+    "hex16": "hex16",
 }
 
-StaticJson = [Labels, HardwareRegisters, SizeofTypes]
+NativeTypeToSize = {
+    "bitfield": 1,
+    "uint8_t": 1,
+    "int8_t": 1,
+    "uint16_t": 2,
+    "int16_t": 2,
+}
+
+StaticJson = [Labels, HardwareRegisters]
 if __name__ == "__main__":
 
     for j in StaticJson:

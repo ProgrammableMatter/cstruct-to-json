@@ -1,9 +1,10 @@
 import json
 from collections import OrderedDict
-from google.protobuf.internal.decoder import EnumDecoder
 
 from EnumsToJson import EnumsToJson
-from ParseCTypes import CTypesParser, StructDeclVisitor, EnumDeclVisitor
+from config import JsonConfig
+from config.JsonConfig import NativeTypeToSimulatorType, NativeTypeToSize, DefaultStructByteSize
+from parsing.ParseCTypes import CTypesParser, StructDeclVisitor, EnumDeclVisitor
 
 
 def printLeaf(fieldPath, fieldMame, fullyQualifiedName, type, bitSize, dimension):
@@ -202,9 +203,13 @@ class LinearStructFieldsToJson:
     def toJson(self, structFields, nativeTypeToSize={}, nativeTypeToSimulatorType={}, startAddressLabel=""):
 
         addressOffet = 0
-        entries = []
+        entries = OrderedDict()
         for field in structFields:
+
             fieldDescription = structFields[field][structFields[field].keys()[0]]
+            if fieldDescription.getFieldPath() not in entries:
+                entries[fieldDescription.getFieldPath()] = []
+
             property = field
             fieldTypeName = fieldDescription.getTypeName()
 
@@ -220,14 +225,17 @@ class LinearStructFieldsToJson:
                 address = addressOffet
             addressOffet += nativeTypeToSize[fieldTypeName]
 
-            entries.append({"property": property, "type": type, "address": address})
-        self.jsonSource = {"structs": entries}
+            entries[fieldDescription.getFieldPath()].append({"property": property, "type": type, "address": address})
+        self.jsonSource = OrderedDict({"structs": entries})
 
     def show(self):
         print(json.dumps(self.jsonSource, sort_keys=False, indent=2, separators=(',', ': ')))
 
     def getDump(self):
         return json.dumps(self.jsonSource, sort_keys=False, indent=2, separators=(',', ': '))
+
+    def getObject(self):
+        return self.jsonSource
 
 
 def parseEnumTypesAndStructs():
@@ -237,25 +245,20 @@ def parseEnumTypesAndStructs():
     print("parsed structs")
     sdv.show()
     edv = EnumDeclVisitor()
-    enumTypesToValue = ctp.getEntities(edv)
+    parsedEnums = ctp.getEntities(edv)
 
     print("\nparsed enums")
     edv.show()
-    return structs, enumTypesToValue
+    return structs, parsedEnums
 
 
-def aggregateFields(structs, enumTypesToValue):
-    nativeTypeToSize = {"int16_t": 2,
-                        "uint16_t": 2,
-                        "int8_t": 1,
-                        "uint8_t": 1,
-                        }
+def aggregateFields(structs, enumTypesToByteSize):
     enumToSize = {}
-    for enum in enumTypesToValue:
-        enumToSize[enum] = 2
-    typeToSizeMapping = dict(nativeTypeToSize.viewitems() | enumToSize.viewitems())
+    for enum in enumTypesToByteSize:
+        enumToSize[enum] = DefaultStructByteSize
+    typeToSizeMapping = dict(NativeTypeToSize.viewitems() | enumToSize.viewitems())
     composer = LinearStructComposer(typeToSizeMapping)
-    traverseStructMembersDF(structs, nativeTypeToSize, enumTypesToValue, "ParticleState", "ParticleState",
+    traverseStructMembersDF(structs, NativeTypeToSize, enumTypesToByteSize, "ParticleState", "ParticleState",
                             callback=composer.consumeStructField)
     print("\nlinear ordered struct member list")
     for d in composer.linearFields:
@@ -274,49 +277,50 @@ def aggregateFields(structs, enumTypesToValue):
     return enumToSize, structFieldToDescription
 
 
-def generateJson(structFieldToDescription):
-    typeToSize = {
-        "bitfield": 1,
-        "uint8_t": 1,
-        "int8_t": 1,
-        "uint16_t": 2,
-        "int16_t": 2,
-    }
-    appendEnumToSize(enumToSize, typeToSize)
-
-    nativeTypeToSimulatorType = {
-        "bitfield": "bit",
-        # 1byte
-        "uint8_t": "unsigned",
-        "int8_t": "signed",
-        "hex": "hex",
-        # 2 byte
-        "uint16_t": "unsigned int",
-        "int16_t": "signed int",
-        # 1 byte as bit field
-        "bitfield": "bit",
-        # 1 byte as char
-        "char": "char",
-        # 2 byte as hex
-        "dhex": "dhex",
-        "hex16": "hex16",
-    }
-    appendEnumNames(enumToSize, nativeTypeToSimulatorType)
+def generateCStructJson(enumToSize, structFieldToDescription):
+    appendEnumToSize(enumToSize, NativeTypeToSize)
+    appendEnumNames(enumToSize, NativeTypeToSimulatorType)
 
     lsfj = LinearStructFieldsToJson()
-    lsfj.toJson(structFieldToDescription, nativeTypeToSize=typeToSize,
-                nativeTypeToSimulatorType=nativeTypeToSimulatorType, startAddressLabel="globalStateBase")
+    lsfj.toJson(structFieldToDescription, nativeTypeToSize=NativeTypeToSize,
+                nativeTypeToSimulatorType=NativeTypeToSimulatorType, startAddressLabel="globalStateBase")
     # lsfj.show()
-    return lsfj.getDump()
+    return lsfj.getObject(), lsfj.getDump()
 
 
 if __name__ == "__main__":
-    structs, enumTypesToValue = parseEnumTypesAndStructs()
-    enumToSize, structFieldToDescription = aggregateFields(structs, enumTypesToValue)
-    j = generateJson(structFieldToDescription)
-    print(j)
+    structs, parsedEnums = parseEnumTypesAndStructs()
+    enumToSize, structFieldToDescription = aggregateFields(structs, parsedEnums)
+
+    jsonDescription = OrderedDict()
+
+    etj = EnumsToJson()
+    enumsObject = etj.getObject()
+
+    structsObject, jsonDump = generateCStructJson(enumToSize, structFieldToDescription)
+    # print(jsonDump)
+
+    jsonDescription["enums"] = enumsObject["enums"]
+
+    # add sizeof structs
+    jsonDescription["sizeffTypes"] = OrderedDict()
+    for enumType in enumToSize:
+        jsonDescription["sizeofTypes"][enumType] = DefaultStructByteSize
+
+    # add labels
+    jsonDescription["labels"] = JsonConfig.Labels["labels"]
+
+    jsonDescription["structs"] = OrderedDict()
+    # append staticly defined register description
+    for key in JsonConfig.HardwareRegisters["structs"]:
+        jsonDescription["structs"][key] = JsonConfig.HardwareRegisters["structs"][key]
+
+    # append parsed c structs
+    for key in structsObject["structs"]:
+        jsonDescription["structs"][key] = structsObject["structs"][key]
+
+    print(json.dumps(jsonDescription, sort_keys=False, indent=2, separators=(',', ': ')))
 
     # Todo:
     # add "patch" to config to override autogenerated
     #       for 2byte types: treat as uint8_t for low byte, uint16 for high byte
-    #       for type overriding of auto generated: uint8_t vs. char, hex, bin
