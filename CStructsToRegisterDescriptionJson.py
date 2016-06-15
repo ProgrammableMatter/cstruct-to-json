@@ -6,6 +6,7 @@ from config import JsonConfig
 from config.JsonConfig import NativeTypeToSimulatorType, NativeTypeToSize, DefaultStructByteSize
 from parsing.ParseCTypes import CTypesParser, StructDeclVisitor, EnumDeclVisitor
 
+Verbose = False
 
 def printLeaf(fieldPath, fieldMame, fullyQualifiedName, type, bitSize, dimension):
     if bitSize is not None and bitSize is not "":
@@ -18,7 +19,8 @@ def printLeaf(fieldPath, fieldMame, fullyQualifiedName, type, bitSize, dimension
     else:
         dimension = ""
 
-    print("%s%s <%s%s>" % (fullyQualifiedName, dimension, type, bitSize))
+    if Verbose:
+        print("%s%s <%s%s>" % (fullyQualifiedName, dimension, type, bitSize))
 
 
 def traverseStructMembersDF(structs, nativeTypesToSize, enumTypesToValue, rootStructName, prefix, callback=printLeaf):
@@ -210,13 +212,13 @@ class LinearStructFieldsToJson:
             if fieldDescription.getFieldPath() not in entries:
                 entries[fieldDescription.getFieldPath()] = []
 
-            property = field
             fieldTypeName = fieldDescription.getTypeName()
 
             if fieldDescription.isBitField():
                 type = nativeTypeToSimulatorType["bitfield"]
-                property += "." + self.__compactBitFieldDescriptions(structFields[field])
+                property = self.__compactBitFieldDescriptions(structFields[field])
             else:
+                property = structFields[field][0].getFieldName()
                 type = nativeTypeToSimulatorType[fieldTypeName]
 
             if startAddressLabel != "":
@@ -242,13 +244,18 @@ def parseEnumTypesAndStructs():
     ctp = CTypesParser()
     sdv = StructDeclVisitor()
     structs = ctp.getEntities(sdv)
-    print("parsed structs")
-    sdv.show()
+
+    if Verbose:
+        print("parsed structs")
+
+    if Verbose:
+        sdv.show()
     edv = EnumDeclVisitor()
     parsedEnums = ctp.getEntities(edv)
 
-    print("\nparsed enums")
-    edv.show()
+    if Verbose:
+        print("\nparsed enums")
+        edv.show()
     return structs, parsedEnums
 
 
@@ -260,19 +267,25 @@ def aggregateFields(structs, enumTypesToByteSize):
     composer = LinearStructComposer(typeToSizeMapping)
     traverseStructMembersDF(structs, NativeTypeToSize, enumTypesToByteSize, "ParticleState", "ParticleState",
                             callback=composer.consumeStructField)
-    print("\nlinear ordered struct member list")
-    for d in composer.linearFields:
-        print ("%s" % d)
+
+    if Verbose:
+        print("\nlinear ordered struct member list")
+        for d in composer.linearFields:
+            print ("%s" % d)
     composer.aggregateDescriptions()
     structFieldToDescription = OrderedDict()
-    print("\naggregated linear ordered struct member list")
+
+    if Verbose:
+        print("\naggregated linear ordered struct member list")
     for fieldPath in reversed(composer.aggregatedLinearFields.keys()):
-        print ("%s" % fieldPath)
+        if Verbose:
+            print ("%s" % fieldPath)
         fieldDescriptions = composer.aggregatedLinearFields[fieldPath]
         structFieldToDescription[fieldPath] = OrderedDict()
         for startBitPosition in reversed(fieldDescriptions.keys()):
             field = fieldDescriptions[startBitPosition]
-            print(" -- %s" % (field))
+            if Verbose:
+                print(" -- %s" % (field))
             structFieldToDescription[fieldPath][field.getStartBit()] = field
     return enumToSize, structFieldToDescription
 
@@ -303,7 +316,7 @@ if __name__ == "__main__":
     jsonDescription["enums"] = enumsObject["enums"]
 
     # add sizeof structs
-    jsonDescription["sizeffTypes"] = OrderedDict()
+    jsonDescription["sizeofTypes"] = OrderedDict()
     for enumType in enumToSize:
         jsonDescription["sizeofTypes"][enumType] = DefaultStructByteSize
 

@@ -3,6 +3,7 @@ from config import SourceConfig as sourceConfig
 
 from pycparser import parse_file, c_ast
 
+Verbose = False
 
 class StructDeclVisitor(c_ast.NodeVisitor):
     def __init__(self):
@@ -107,5 +108,6 @@ if __name__ == "__main__":
 
     ctp = CTypesParser(sourceConfig)
     # ctp.getEntities(StructDeclVisitor())
-    ctp.showEntities(StructDeclVisitor())
+    if Verbose:
+        ctp.showEntities(StructDeclVisitor())
 
