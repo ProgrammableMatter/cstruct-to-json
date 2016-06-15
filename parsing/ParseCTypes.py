@@ -53,6 +53,8 @@ class EnumDeclVisitor(c_ast.NodeVisitor):
     def visit_Enum(self, node):
         if node.name not in self.enums:
             self.enums[node.name] = []
+        else:
+            return
 
         for enumerator in node.values.enumerators:
             self.enums[node.name].append(enumerator)

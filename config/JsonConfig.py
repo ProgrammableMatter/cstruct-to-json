@@ -306,8 +306,8 @@ HardwareRegisters = OrderedDict({
 NativeTypeToSimulatorType = {
     "bitfield": "bit",
     # 1byte
-    "uint8_t": "unsigned",
-    "int8_t": "signed",
+    "uint8_t": "hex",
+    "int8_t": "hex",
     "hex": "hex",
     # 2 byte
     "uint16_t": "unsigned int",
@@ -328,6 +328,14 @@ NativeTypeToSize = {
     "uint16_t": 2,
     "int16_t": 2,
 }
+
+TypeOverrides = [
+    {
+        # if a fields property contains this property, the type is overridden
+        "property": "magicEndByte",
+        "type": "hex",
+    },
+]
 
 StaticJson = [Labels, HardwareRegisters]
 if __name__ == "__main__":
