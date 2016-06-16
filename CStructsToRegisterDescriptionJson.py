@@ -204,7 +204,7 @@ class LinearStructFieldsToJson:
     def __compactBitFieldDescriptions(self, fieldDescriptions):
         desc = "("
         isFirst = True
-        for fieldDescription in fieldDescriptions:
+        for fieldDescription in reversed(fieldDescriptions.keys()):
             d = fieldDescriptions[fieldDescription]
             if not isFirst:
                 desc += " | "
@@ -213,7 +213,7 @@ class LinearStructFieldsToJson:
             if d.getStartBit() == d.getEndBit():
                 fromTo = str(d.getStartBit())
             else:
-                fromTo = str(d.getStartBit()) + ":" + str(d.getEndBit())
+                fromTo = str(d.getEndBit()) + ":" + str(d.getStartBit())
 
             desc += d.getFieldName() + "[" + fromTo + "]"
         return desc + ")"
