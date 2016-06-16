@@ -331,9 +331,28 @@ NativeTypeToSize = {
 
 TypeOverrides = [
     {
-        # if a fields property contains this property, the type is overridden
+        # if a field's property contains this property,
         "property": "magicEndByte",
-        "type": "hex",
+        # and has the simulator type equals oldType
+        "oldType": "hex",
+        # the type is overridden with newType
+        "newType": "hex",
+    }, {
+        "property": "row",
+        "oldType": "hex",
+        "newType": "unsigned",
+    }, {
+        "property": "column",
+        "oldType": "hex",
+        "newType": "unsigned",
+    }, {
+        "property": "loopCount",
+        "oldType": "hex",
+        "newType": "unsigned",
+    }, {
+        "property": "bitMask",
+        "oldType": "hex",
+        "newType": "bit",
     },
 ]
 

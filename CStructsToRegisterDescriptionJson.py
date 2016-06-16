@@ -66,13 +66,16 @@ def appendEnumNames(enumDict, nativeTypeToSimulatorTypeMaping):
 
 
 class FieldDescription:
-    def __init__(self, description, fieldPath, fieldName, typeName, isBitField=False, startBit=None, bitsLength=None):
+    def __init__(self, description, fieldPath, fieldName, typeName, arrayIdx=None, isBitField=False, startBit=None,
+                 bitsLength=None):
         self.startBit = startBit
         self.length = bitsLength
         self.endBit = None
         self.fieldPath = fieldPath
         self.fieldName = fieldName
         self.typeName = typeName
+        self.arrayIndex = arrayIdx
+
         self.__isBitField = isBitField
 
         if self.startBit != None:
@@ -87,6 +90,12 @@ class FieldDescription:
             self.endBit = self.startBit + self.length - 1
 
         self.description = description
+
+    def getArrayIdx(self):
+        return self.arrayIndex
+
+    def isArrayField(self):
+        return self.arrayIndex != None
 
     def isBitField(self):
         return self.__isBitField
@@ -153,14 +162,15 @@ class LinearStructComposer:
                 if len(self.linearFields) > 0:
                     lastField = self.linearFields[-1]
                     startBit = (1 + lastField.getEndBit()) % (self.typeToSize[lastField.getTypeName()] * 8)
-            fieldDescription = FieldDescription(fullyQualifiedName, fieldPath, fieldName, type, isBitField=isBitField,
+            fieldDescription = FieldDescription(fullyQualifiedName, fieldPath, fieldName, type, arrayIdx=None,
+                                                isBitField=isBitField,
                                                 startBit=startBit,
                                                 bitsLength=bitSize)
             self.linearFields.append(fieldDescription)
-        else:
+        else:  # on array decl
             for i in range(dimension):
                 fieldDescription = FieldDescription("%s[%i]" % (fullyQualifiedName, i), fieldPath, fieldName, type,
-                                                    isBitField=isBitField, startBit=0, bitsLength=8)
+                                                    arrayIdx=i, isBitField=isBitField, startBit=0, bitsLength=8)
                 self.linearFields.append(fieldDescription)
 
     def __createDescriptionDictIfNotAvailable(self, key):
@@ -184,8 +194,11 @@ class LinearStructComposer:
 
 
 class LinearStructFieldsToJson:
+    jsonSource = None
+    doInfer2ndByteFromUint16_t = True
+
     def __init__(self):
-        self.jsonSource = None
+        pass
 
     def __compactBitFieldDescriptions(self, fieldDescriptions):
         desc = "("
@@ -201,8 +214,20 @@ class LinearStructFieldsToJson:
             else:
                 fromTo = str(d.getStartBit()) + ":" + str(d.getEndBit())
 
-            desc += d.getFieldName() + " [" + fromTo + "]"
+            desc += d.getFieldName() + "[" + fromTo + "]"
         return desc + ")"
+
+    def __infer2ndByte(self, startAddressLabel, addressOffet, property, fieldDescription, entries, type, nativeTypeToSize):
+        if self.doInfer2ndByteFromUint16_t and \
+                        fieldDescription.getTypeName() in nativeTypeToSize and \
+                        2 == nativeTypeToSize[fieldDescription.getTypeName()]:
+            p2 = property + "[1]"
+            if startAddressLabel != "":
+                a2 = startAddressLabel + "+" + str(addressOffet + 1)
+            else:
+                a2 = addressOffet + 1
+            entries[fieldDescription.getFieldPath()].append(
+                {"property": p2, "type": type, "address": a2})
 
     def toJson(self, structFields, nativeTypeToSize={}, nativeTypeToSimulatorType={}, startAddressLabel=""):
 
@@ -220,8 +245,14 @@ class LinearStructFieldsToJson:
                 type = nativeTypeToSimulatorType["bitfield"]
                 property = self.__compactBitFieldDescriptions(structFields[field])
             else:
-                property = structFields[field][0].getFieldName()
+                if fieldDescription.isArrayField():
+                    property = structFields[field][0].getFieldName() + "[" + str(fieldDescription.getArrayIdx()) + "]"
+                else:
+                    property = structFields[field][0].getFieldName()
                 type = nativeTypeToSimulatorType[fieldTypeName]
+
+                self.__infer2ndByte(startAddressLabel, addressOffet, property, fieldDescription, entries,
+                                    type, nativeTypeToSize)
 
             if startAddressLabel != "":
                 address = startAddressLabel + "+" + str(addressOffet)
@@ -322,7 +353,8 @@ class Gui:
 
         self.rootWindow.mainloop()
 
-def aggregateToJsonDumpableDescription( structsObject, jsonDump):
+
+def aggregateToJsonDumpableDescription(structsObject, enumsObject):
     jsonDescription["enums"] = enumsObject["enums"]
 
     # add sizeof structs
@@ -342,13 +374,21 @@ def aggregateToJsonDumpableDescription( structsObject, jsonDump):
     for key in structsObject["structs"]:
         jsonDescription["structs"][key] = structsObject["structs"][key]
 
+    if Verbose:
+        print("\ntype overridings")
     # override types
-    for key in jsonDescription["structs"]:
-        sd = jsonDescription["structs"][key][0]
-        for override in TypeOverrides:
-            substring = override["property"]
-            if substring in sd["property"]:
-                sd["type"] = override["type"]
+    for descriptionSetKey in jsonDescription["structs"]:
+        for description in jsonDescription["structs"][descriptionSetKey]:
+            # jsonDescription["structs"][descriptionSet][key]
+            for override in TypeOverrides:
+                substring = override["property"]
+                oldType = override["oldType"]
+                newType = override["newType"]
+                if substring in description["property"] and oldType == description["type"]:
+                    if Verbose:
+                        print(descriptionSetKey + "." + description["property"] + " " + description[
+                            "type"] + " <== " + newType)
+                    description["type"] = newType
 
     return jsonDescription
 
@@ -365,7 +405,7 @@ if __name__ == "__main__":
     structsObject, jsonDump = generateCStructJson(enumToSize, structFieldToDescription)
     # print(jsonDump)
 
-    jsonDescription = aggregateToJsonDumpableDescription( structsObject, jsonDump)
+    jsonDescription = aggregateToJsonDumpableDescription(structsObject, enumsObject)
 
     # print(json.dumps(jsonDescription, sort_keys=False, indent=2, separators=(',', ': ')))
     Gui(json.dumps(jsonDescription, sort_keys=False, indent=2, separators=(',', ': ')))
