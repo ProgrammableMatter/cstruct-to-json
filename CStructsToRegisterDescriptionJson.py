@@ -3,7 +3,8 @@ from Tkinter import *
 from collections import OrderedDict
 
 from config import JsonConfig
-from config.JsonConfig import NativeTypeToSimulatorType, NativeTypeToSize, DefaultStructByteSize, TypeOverrides
+from config.JsonConfig import NativeTypeToSimulatorType, NativeTypeToSize, DefaultStructByteSize, TypeOverrides, \
+    Infer2ndByteExceptions, Infer2ndByte
 from parsing.EnumsToJson import EnumsToJson
 from parsing.ParseCTypes import CTypesParser, StructDeclVisitor, EnumDeclVisitor
 
@@ -195,7 +196,7 @@ class LinearStructComposer:
 
 class LinearStructFieldsToJson:
     jsonSource = None
-    doInfer2ndByteFromUint16_t = True
+    doInfer2ndByteFromUint16_t = Infer2ndByte
 
     def __init__(self):
         pass
@@ -217,17 +218,24 @@ class LinearStructFieldsToJson:
             desc += d.getFieldName() + "[" + fromTo + "]"
         return desc + ")"
 
-    def __infer2ndByte(self, startAddressLabel, addressOffet, property, fieldDescription, entries, type, nativeTypeToSize):
+    def __infer2ndByte(self, startAddressLabel, addressOffet, property, fieldDescription, entries, type,
+                       nativeTypeToSize):
         if self.doInfer2ndByteFromUint16_t and \
                         fieldDescription.getTypeName() in nativeTypeToSize and \
                         2 == nativeTypeToSize[fieldDescription.getTypeName()]:
-            p2 = property + "[1]"
+            for exception in Infer2ndByteExceptions:
+                if exception["property"] in property and exception["type"] in type:
+                    return
+
+            newProperty = property + "[1]"
             if startAddressLabel != "":
-                a2 = startAddressLabel + "+" + str(addressOffet + 1)
+                newAddress = startAddressLabel + "+" + str(addressOffet + 1)
             else:
-                a2 = addressOffet + 1
+                newAddress = addressOffet + 1
+
             entries[fieldDescription.getFieldPath()].append(
-                {"property": p2, "type": type, "address": a2})
+                {"property": newProperty, "type": type, "address": newAddress})
+            doInfer = True
 
     def toJson(self, structFields, nativeTypeToSize={}, nativeTypeToSimulatorType={}, startAddressLabel=""):
 

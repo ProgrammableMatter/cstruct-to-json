@@ -356,6 +356,29 @@ TypeOverrides = [
     },
 ]
 
+# infers an extra register description for the 2nd byte of 2 byte length types, i.e. uint16_t
+Infer2ndByte = True
+
+# inference exceptions
+Infer2ndByteExceptions = [
+    {
+        # do not infer 2nd byte if a field's property contains this property,
+        "property": "state",
+        # and has the simulator type contains type
+        "type": "StateType",
+    }, {
+        "property": "type",
+        "type": "NodeType",
+    }, {
+        "property": "decodingState",
+        "type": "ManchesterDecodingStateType",
+
+    }, {
+        "property": "xmissionState",
+        "type": "XmissionType",
+    },
+]
+
 StaticJson = [Labels, HardwareRegisters]
 if __name__ == "__main__":
 
