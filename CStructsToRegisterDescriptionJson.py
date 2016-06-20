@@ -3,8 +3,8 @@ from Tkinter import *
 from collections import OrderedDict
 
 from config import JsonConfig
-from config.JsonConfig import NativeTypeToSimulatorType, NativeTypeToSize, DefaultStructByteSize, TypeOverrides, \
-    Infer2ndByteExceptions, Infer2ndByte
+from config.JsonConfig import NativeTypeToSimulatorType, NativeTypeToSize, DefaultEnumByteSize, TypeOverrides, \
+    Infer2ndByteExceptions, Infer2ndByte, Infer2ndByteSimulatorTypeToNextSmallerType, NativeTypeToSimulatorBitfieldType
 from parsing.EnumsToJson import EnumsToJson
 from parsing.ParseCTypes import CTypesParser, StructDeclVisitor, EnumDeclVisitor
 
@@ -224,7 +224,7 @@ class LinearStructFieldsToJson:
                         fieldDescription.getTypeName() in nativeTypeToSize and \
                         2 == nativeTypeToSize[fieldDescription.getTypeName()]:
             for exception in Infer2ndByteExceptions:
-                if exception["property"] in property and exception["type"] in type:
+                if exception["property"] == property and exception["type"] == type:
                     return
 
             newProperty = property + "[1]"
@@ -233,9 +233,9 @@ class LinearStructFieldsToJson:
             else:
                 newAddress = addressOffet + 1
 
+            newType = Infer2ndByteSimulatorTypeToNextSmallerType[type]
             entries[fieldDescription.getFieldPath()].append(
-                {"property": newProperty, "type": type, "address": newAddress})
-            doInfer = True
+                {"property": newProperty, "type": newType, "address": newAddress})
 
     def toJson(self, structFields, nativeTypeToSize={}, nativeTypeToSimulatorType={}, startAddressLabel=""):
 
@@ -250,7 +250,7 @@ class LinearStructFieldsToJson:
             fieldTypeName = fieldDescription.getTypeName()
 
             if fieldDescription.isBitField():
-                type = nativeTypeToSimulatorType["bitfield"]
+                type = NativeTypeToSimulatorBitfieldType[fieldDescription.getTypeName()]
                 property = self.__compactBitFieldDescriptions(structFields[field])
             else:
                 if fieldDescription.isArrayField():
@@ -259,8 +259,8 @@ class LinearStructFieldsToJson:
                     property = structFields[field][0].getFieldName()
                 type = nativeTypeToSimulatorType[fieldTypeName]
 
-                self.__infer2ndByte(startAddressLabel, addressOffet, property, fieldDescription, entries,
-                                    type, nativeTypeToSize)
+            self.__infer2ndByte(startAddressLabel, addressOffet, property, fieldDescription, entries,
+                                type, nativeTypeToSize)
 
             if startAddressLabel != "":
                 address = startAddressLabel + "+" + str(addressOffet)
@@ -303,7 +303,7 @@ def parseEnumTypesAndStructs():
 def aggregateFields(structs, enumTypesToByteSize):
     enumToSize = {}
     for enum in enumTypesToByteSize:
-        enumToSize[enum] = DefaultStructByteSize
+        enumToSize[enum] = DefaultEnumByteSize
     typeToSizeMapping = dict(NativeTypeToSize.viewitems() | enumToSize.viewitems())
     composer = LinearStructComposer(typeToSizeMapping)
     traverseStructMembersDF(structs, NativeTypeToSize, enumTypesToByteSize, "ParticleState", "ParticleState",
@@ -368,7 +368,7 @@ def aggregateToJsonDumpableDescription(structsObject, enumsObject):
     # add sizeof structs
     jsonDescription["sizeofTypes"] = OrderedDict()
     for enumType in enumToSize:
-        jsonDescription["sizeofTypes"][enumType] = DefaultStructByteSize
+        jsonDescription["sizeofTypes"][enumType] = DefaultEnumByteSize
 
     # add labels
     jsonDescription["labels"] = JsonConfig.Labels["labels"]

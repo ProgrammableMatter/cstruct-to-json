@@ -1,13 +1,113 @@
 import json
 from collections import OrderedDict
 
-DefaultStructByteSize = 2
+DefaultEnumByteSize = 2
 
+# custom address labels definitions
 Labels = OrderedDict({
     "labels": {
+        # start address of the global struct
         "globalStateBase": 96
     }
 })
+
+NativeTypeToSimulatorBitfieldType = {
+    "bit": "bit",
+
+    "char": "bit",
+    "uint8_t": "bit",
+    "int8_t": "bit",
+
+    "uint16_t": "dbit",
+    "int16_t": "dbit",
+
+}
+
+NativeTypeToSimulatorType = {
+    # 1 byte as bit field
+    "bitfield": "bit",
+    # 2 byte as bit field
+    "dbitfield": "dbit",
+    # 1byte
+    "uint8_t": "hex",
+    "int8_t": "hex",
+    "hex": "hex",
+    # 2 byte
+    "uint16_t": "unsigned int",
+    "int16_t": "signed int",
+    # 1 byte as char
+    "char": "char",
+    # 2 byte as hex
+    "dhex": "dhex",
+    "hex16": "hex16",
+}
+
+Infer2ndByteSimulatorTypeToNextSmallerType = {
+    "dbit": "bit",
+    "dhex": "hex",
+    "unsigned int": "unsigned",
+    "signed int": "signed",
+    "dhex": "hex",
+    "16hex": "hex",
+}
+
+NativeTypeToSize = {
+    "bitfield": 1,
+    "uint8_t": 1,
+    "int8_t": 1,
+    "uint16_t": 2,
+    "int16_t": 2,
+}
+
+TypeOverrides = [
+    {
+        # if a field's property contains this property,
+        "property": "magicEndByte",
+        # and has the simulator type equals oldType
+        "oldType": "hex",
+        # the type is overridden with newType
+        "newType": "hex",
+    }, {
+        "property": "row",
+        "oldType": "hex",
+        "newType": "unsigned",
+    }, {
+        "property": "column",
+        "oldType": "hex",
+        "newType": "unsigned",
+    }, {
+        "property": "loopCount",
+        "oldType": "hex",
+        "newType": "unsigned",
+    }, {
+        "property": "bitMask",
+        "oldType": "hex",
+        "newType": "bit",
+    },
+]
+
+# infers an extra register description for the 2nd byte of 2 byte length types, i.e. uint16_t
+Infer2ndByte = True
+
+# inference exceptions
+Infer2ndByteExceptions = [
+    {
+        # do not infer 2nd byte if a field's property contains this property,
+        "property": "state",
+        # and has the simulator type contains type
+        "type": "StateType",
+    }, {
+        "property": "type",
+        "type": "NodeType",
+    }, {
+        "property": "decodingState",
+        "type": "ManchesterDecodingStateType",
+
+    }, {
+        "property": "xmissionState",
+        "type": "XmissionType",
+    },
+]
 
 HardwareRegisters = OrderedDict({
     "structs": {
@@ -302,82 +402,6 @@ HardwareRegisters = OrderedDict({
         ],
     }
 })
-
-NativeTypeToSimulatorType = {
-    "bitfield": "bit",
-    # 1byte
-    "uint8_t": "hex",
-    "int8_t": "hex",
-    "hex": "hex",
-    # 2 byte
-    "uint16_t": "unsigned int",
-    "int16_t": "signed int",
-    # 1 byte as bit field
-    "bitfield": "bit",
-    # 1 byte as char
-    "char": "char",
-    # 2 byte as hex
-    "dhex": "dhex",
-    "hex16": "hex16",
-}
-
-NativeTypeToSize = {
-    "bitfield": 1,
-    "uint8_t": 1,
-    "int8_t": 1,
-    "uint16_t": 2,
-    "int16_t": 2,
-}
-
-TypeOverrides = [
-    {
-        # if a field's property contains this property,
-        "property": "magicEndByte",
-        # and has the simulator type equals oldType
-        "oldType": "hex",
-        # the type is overridden with newType
-        "newType": "hex",
-    }, {
-        "property": "row",
-        "oldType": "hex",
-        "newType": "unsigned",
-    }, {
-        "property": "column",
-        "oldType": "hex",
-        "newType": "unsigned",
-    }, {
-        "property": "loopCount",
-        "oldType": "hex",
-        "newType": "unsigned",
-    }, {
-        "property": "bitMask",
-        "oldType": "hex",
-        "newType": "bit",
-    },
-]
-
-# infers an extra register description for the 2nd byte of 2 byte length types, i.e. uint16_t
-Infer2ndByte = True
-
-# inference exceptions
-Infer2ndByteExceptions = [
-    {
-        # do not infer 2nd byte if a field's property contains this property,
-        "property": "state",
-        # and has the simulator type contains type
-        "type": "StateType",
-    }, {
-        "property": "type",
-        "type": "NodeType",
-    }, {
-        "property": "decodingState",
-        "type": "ManchesterDecodingStateType",
-
-    }, {
-        "property": "xmissionState",
-        "type": "XmissionType",
-    },
-]
 
 StaticJson = [Labels, HardwareRegisters]
 if __name__ == "__main__":
