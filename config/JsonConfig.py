@@ -24,20 +24,14 @@ NativeTypeToSimulatorBitfieldType = {
 }
 
 NativeTypeToSimulatorType = {
-    # 1 byte as bit field
     "bitfield": "bit",
-    # 2 byte as bit field
     "dbitfield": "dbit",
-    # 1byte
     "uint8_t": "hex",
     "int8_t": "hex",
     "hex": "hex",
-    # 2 byte
     "uint16_t": "unsigned int",
     "int16_t": "signed int",
-    # 1 byte as char
     "char": "char",
-    # 2 byte as hex
     "dhex": "dhex",
     "hex16": "hex16",
 }
@@ -83,6 +77,16 @@ TypeOverrides = [
         "property": "bitMask",
         "oldType": "hex",
         "newType": "bit",
+    },
+    {
+        "property": "maxShortIntervalDurationOvertimePercentageRatio",
+        "oldType": "hex",
+        "newType": "unsigned"
+    },
+    {
+        "property": "maxLongIntervalDurationOvertimePercentageRatio",
+        "oldType": "hex",
+        "newType": "unsigned"
     },
 ]
 

@@ -253,6 +253,10 @@ class LinearStructFieldsToJson:
                 type = NativeTypeToSimulatorBitfieldType[fieldDescription.getTypeName()]
                 property = self.__compactBitFieldDescriptions(structFields[field])
             else:
+
+                if 0 not in structFields[field]:
+                    pass
+
                 if fieldDescription.isArrayField():
                     property = structFields[field][0].getFieldName() + "[" + str(fieldDescription.getArrayIdx()) + "]"
                 else:
@@ -400,6 +404,12 @@ def aggregateToJsonDumpableDescription(structsObject, enumsObject):
 
     return jsonDescription
 
+def simulatorToSize (simulatorType, nativeToSimulator, nativeToSize):
+    for nativeType in nativeToSimulator:
+        if nativeToSimulator[nativeType] == simulatorType:
+            for nativeToSizeKey in nativeToSize:
+                if nativeToSizeKey == nativeType:
+                    return nativeToSize[nativeToSizeKey]
 
 if __name__ == "__main__":
     structs, parsedEnums = parseEnumTypesAndStructs()
@@ -415,5 +425,11 @@ if __name__ == "__main__":
 
     jsonDescription = aggregateToJsonDumpableDescription(structsObject, enumsObject)
 
+    totalSize = 0
+    for struct in jsonDescription["structs"]:
+        for field in jsonDescription["structs"][struct]:
+            totalSize += simulatorToSize("bit", JsonConfig.NativeTypeToSimulatorType, JsonConfig.NativeTypeToSize)
+    print("Total struct size: %s Bytes" % totalSize)
     # print(json.dumps(jsonDescription, sort_keys=False, indent=2, separators=(',', ': ')))
     Gui(json.dumps(jsonDescription, sort_keys=False, indent=2, separators=(',', ': ')))
+
