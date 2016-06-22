@@ -88,6 +88,25 @@ TypeOverrides = [
         "oldType": "hex",
         "newType": "unsigned"
     },
+    {
+        "property": "(timerValue[15:1] | isRisingEdge[0])",
+        "oldType": "dbit",
+        "newType": "unsigned int"
+    },
+    {
+        "property": "(__pad[7] | startIndex[6:0])",
+        "oldType": "bit",
+        "newType": "unsigned"
+    },
+    {
+        "property": "(__pad[7] | endIndex[6:0])",
+        "oldType": "bit",
+        "newType": "unsigned"
+    },
+
+
+
+
 ]
 
 # infers an extra register description for the 2nd byte of 2 byte length types, i.e. uint16_t
