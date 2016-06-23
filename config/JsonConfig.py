@@ -41,7 +41,6 @@ Infer2ndByteSimulatorTypeToNextSmallerType = {
     "dhex": "hex",
     "unsigned int": "unsigned",
     "signed int": "signed",
-    "dhex": "hex",
     "16hex": "hex",
 }
 
@@ -99,7 +98,7 @@ TypeOverrides = [
         "newType": "unsigned"
     },
     {
-        "property": "(__pad[7] | endIndex[6:0])",
+        "property": "(__pad1[7] | endIndex[6:0])",
         "oldType": "bit",
         "newType": "unsigned"
     },
@@ -137,7 +136,7 @@ HardwareRegisters = OrderedDict({
         # /* state in register of pin (input) A  */
         "A.in": [
             {
-                "property": "(EAST_TX | EAST_SW | TP3 | PA4 | SOUTH_TX | STOUH_SW | TP2 | ERROR)",
+                "property": "(EAST_TX | EAST_SW | TP3 | PA4 | SOUTH_TX | SOUTH_SW | TP2 | ERROR)",
                 "type": "bit",
                 "address": 57
             }
@@ -256,7 +255,7 @@ HardwareRegisters = OrderedDict({
             }
         ],
         # /* state in EEPROM EEARL register */
-        "int16L-out": [
+        "int16H-out": [
             {
                 "property": "",
                 "type": "hex",
@@ -367,7 +366,7 @@ HardwareRegisters = OrderedDict({
                 "address": 82
             }
         ],
-        # /* state in timer/counter1 - counter register high byte register */
+        # /* state in timer/counter1 - counter high byte register */
         "TCNT1H": [
             {
                 "property": "",
@@ -375,7 +374,7 @@ HardwareRegisters = OrderedDict({
                 "address": 77
             }
         ],
-        # /* state in timer/counter1 - counter register low byte register */
+        # /* state in timer/counter1 - counter low byte register */
         "TCNT1L": [
             {
                 "property": "",
