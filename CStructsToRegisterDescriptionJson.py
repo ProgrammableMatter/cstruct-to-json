@@ -260,7 +260,13 @@ class LinearStructFieldsToJson:
                 if fieldDescription.isArrayField():
                     property = structFields[field][0].getFieldName() + "[" + str(fieldDescription.getArrayIdx()) + "]"
                 else:
-                    property = structFields[field][0].getFieldName()
+                    try:
+                        property = structFields[field][0].getFieldName()
+                    except KeyError as ke:
+                        print("key %s does not exist" % field)
+                        raise ke
+
+
                 type = nativeTypeToSimulatorType[fieldTypeName]
 
             self.__infer2ndByte(startAddressLabel, addressOffet, property, fieldDescription, entries,
