@@ -8,7 +8,7 @@ defines = [
 ]
 includes = [
     r'-Iutils/fake_libc_include/',
-    r'-I/home/rubienr/msc/git/software/src/avr/avr-common/utils/',
+    r'-I%s/%s/avr/avr-common/utils/' % (__homeDir, __subDir),
 ]
 
 sourceRoots = [
@@ -16,5 +16,5 @@ sourceRoots = [
     __homeDir + "/" + __subDir + "/avr/avr-common/utils/uc-core/communication/ManchesterDecodingTypes.h",
     __homeDir + "/" + __subDir + "/avr/avr-common/utils/uc-core/communication/CommunicationTypes.h",
     __homeDir + "/" + __subDir + "/avr/avr-common/utils/uc-core/communication-protocol/InterpreterTypes.h",
-    __homeDir + "/" + __subDir + "/avr/avr-common/utils/uc-core/ParticleStateTypes.h",
+    __homeDir + "/" + __subDir + "/avr/avr-common/utils/uc-core/particle/ParticleStateTypes.h",
 ]
