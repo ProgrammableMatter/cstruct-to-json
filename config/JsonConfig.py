@@ -124,11 +124,23 @@ Infer2ndByteExceptions = [
     }, {
         "property": "decodingState",
         "type": "ManchesterDecodingStateType",
-
     }, {
         "property": "xmissionState",
         "type": "XmissionType",
     },
+
+    {
+        "property": "initiatorState",
+        "type": "CommunicationInitiatorStateTypes",
+    },
+
+    {
+        "property": "receptionistState",
+        "type": "CommunicationReceptionistStateTypes"
+    },
+
+
+
 ]
 
 HardwareRegisters = OrderedDict({
