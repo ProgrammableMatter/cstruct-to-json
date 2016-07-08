@@ -20,7 +20,6 @@ NativeTypeToSimulatorBitfieldType = {
 
     "uint16_t": "dbit",
     "int16_t": "dbit",
-
 }
 
 NativeTypeToSimulatorType = {

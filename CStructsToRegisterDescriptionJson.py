@@ -316,7 +316,7 @@ def aggregateFields(structs, enumTypesToByteSize):
         enumToSize[enum] = DefaultEnumByteSize
     typeToSizeMapping = dict(NativeTypeToSize.viewitems() | enumToSize.viewitems())
     composer = LinearStructComposer(typeToSizeMapping)
-    traverseStructMembersDF(structs, NativeTypeToSize, enumTypesToByteSize, "ParticleState", "ParticleState",
+    traverseStructMembersDF(structs, NativeTypeToSize, enumTypesToByteSize, "Particle", "Particle",
                             callback=composer.consumeStructField)
 
     if Verbose:
