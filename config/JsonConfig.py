@@ -33,6 +33,7 @@ NativeTypeToSimulatorType = {
     "char": "char",
     "dhex": "dhex",
     "hex16": "hex16",
+    "<pointerType>" : "hex16",
 }
 
 Infer2ndByteSimulatorTypeToNextSmallerType = {
@@ -49,6 +50,7 @@ NativeTypeToSize = {
     "int8_t": 1,
     "uint16_t": 2,
     "int16_t": 2,
+    "<pointerType>": 2,
 }
 
 TypeOverrides = [

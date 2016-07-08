@@ -2,6 +2,8 @@ import json
 from Tkinter import *
 from collections import OrderedDict
 
+from pycparser import c_ast
+
 from config import JsonConfig
 from config.JsonConfig import NativeTypeToSimulatorType, NativeTypeToSize, DefaultEnumByteSize, TypeOverrides, \
     Infer2ndByteExceptions, Infer2ndByte, Infer2ndByteSimulatorTypeToNextSmallerType, NativeTypeToSimulatorBitfieldType
@@ -26,6 +28,35 @@ def printLeaf(fieldPath, fieldMame, fullyQualifiedName, type, bitSize, dimension
         print("%s%s <%s%s>" % (fullyQualifiedName, dimension, type, bitSize))
 
 
+# def traverseStructMembersDF(structs, nativeTypesToSize, enumTypesToValue, rootStructName, prefix, callback=printLeaf):
+#
+#     for structSubDecl in structs[rootStructName]:
+#         structSubDeclTypeName = StructDeclVisitor.getStructTypeName(structSubDecl)
+#         structSubDeclName = structSubDecl.name
+#
+#         dimension = None
+#         if hasattr(structSubDecl.type, "dim"):
+#             dimension = int(structSubDecl.type.dim.value)
+#
+#         isPointerType = type(structSubDecl.type) == c_ast.PtrDecl
+#         if structSubDeclTypeName in nativeTypesToSize.keys() or \
+#                         structSubDeclTypeName in enumTypesToValue.keys() or isPointerType == True:  # on enum, native or pointer type
+#             bitSize = None
+#             if structSubDecl.bitsize != None:
+#                 bitSize = structSubDecl.bitsize.value
+#
+#             callback(prefix, structSubDeclName, prefix + "." + structSubDeclName, structSubDeclTypeName, bitSize,
+#                      dimension, isPointerType)
+#         else:  # on struct type
+#             for dim in range(dimension):
+#                 traverseStructMembersDF(structs, nativeTypesToSize, enumTypesToValue,
+#                                         rootStructName=structSubDeclTypeName, callback=callback,
+#                                         prefix=prefix + "." + structSubDeclName + "[" + str(dim) + "]")
+#             else:
+#                 traverseStructMembersDF(structs, nativeTypesToSize, enumTypesToValue,
+#                                         rootStructName=structSubDeclTypeName, callback=callback,
+#                                         prefix=prefix + "." + structSubDeclName)
+
 def traverseStructMembersDF(structs, nativeTypesToSize, enumTypesToValue, rootStructName, prefix, callback=printLeaf):
     for structSubDecl in structs[rootStructName]:
         structSubDeclTypeName = StructDeclVisitor.getStructTypeName(structSubDecl)
@@ -35,15 +66,17 @@ def traverseStructMembersDF(structs, nativeTypesToSize, enumTypesToValue, rootSt
         if hasattr(structSubDecl.type, "dim"):
             dimension = int(structSubDecl.type.dim.value)
 
+        isPointerType = isPointerType = type(structSubDecl.type) == c_ast.PtrDecl
         if structSubDeclTypeName in nativeTypesToSize.keys() or \
-                        structSubDeclTypeName in enumTypesToValue.keys():  # on enum/native type
-
+                        structSubDeclTypeName in enumTypesToValue.keys() or (isPointerType == True):  # on enum/native type
             bitSize = None
-            if structSubDecl.bitsize != None:
+            if isPointerType:
+                bitSize = None
+            elif structSubDecl.bitsize != None:
                 bitSize = structSubDecl.bitsize.value
 
             callback(prefix, structSubDeclName, prefix + "." + structSubDeclName, structSubDeclTypeName, bitSize,
-                     dimension)
+                     dimension, isPointerType)
         else:  # on struct type
             if dimension != None:
                 for dim in range(dimension):
@@ -68,7 +101,7 @@ def appendEnumNames(enumDict, nativeTypeToSimulatorTypeMaping):
 
 class FieldDescription:
     def __init__(self, description, fieldPath, fieldName, typeName, arrayIdx=None, isBitField=False, startBit=None,
-                 bitsLength=None):
+                 bitsLength=None, isPointerType=False):
         self.startBit = startBit
         self.length = bitsLength
         self.endBit = None
@@ -76,7 +109,7 @@ class FieldDescription:
         self.fieldName = fieldName
         self.typeName = typeName
         self.arrayIndex = arrayIdx
-
+        self.isPointerTyp = isPointerType
         self.__isBitField = isBitField
 
         if self.startBit != None:
@@ -97,6 +130,9 @@ class FieldDescription:
 
     def isArrayField(self):
         return self.arrayIndex != None
+
+    def isPointerType(self):
+        return self.isPointerTyp
 
     def isBitField(self):
         return self.__isBitField
@@ -151,27 +187,42 @@ class LinearStructComposer:
         self.typeToSize = typeToSizeMapping
         self.aggregatedLinearFields = OrderedDict()
 
-    def consumeStructField(self, fieldPath, fieldName, fullyQualifiedName, type, bitSize, dimension):
+    def consumeStructField(self, fieldPath, fieldName, fullyQualifiedName, type, bitSize, dimension, isPointerType):
+
+        # on pointer type decl
+        if isPointerType == True:
+            fieldDescription = FieldDescription("%s*" % fullyQualifiedName, fieldPath, fieldName, type,
+                                                arrayIdx=0, isBitField=False, startBit=0, bitsLength=8,
+                                                isPointerType=isPointerType)
+            self.linearFields.append(fieldDescription)
+            return
 
         isBitField = True
         if bitSize == None:
             isBitField = False
             bitSize = self.typeToSize[type] * 8
+
+        # on normal decl
         if dimension == None:
             startBit = 0
             if bitSize != None:
                 if len(self.linearFields) > 0:
                     lastField = self.linearFields[-1]
-                    startBit = (1 + lastField.getEndBit()) % (self.typeToSize[lastField.getTypeName()] * 8)
+                    if lastField.isPointerType():
+                        startBit = (1 + lastField.getEndBit()) % (8)
+                    else:
+                        startBit = (1 + lastField.getEndBit()) % (self.typeToSize[lastField.getTypeName()] * 8)
             fieldDescription = FieldDescription(fullyQualifiedName, fieldPath, fieldName, type, arrayIdx=None,
                                                 isBitField=isBitField,
                                                 startBit=startBit,
-                                                bitsLength=bitSize)
+                                                bitsLength=bitSize, isPointerType=isPointerType)
             self.linearFields.append(fieldDescription)
-        else:  # on array decl
+        else:
+            # on array decl
             for i in range(dimension):
                 fieldDescription = FieldDescription("%s[%i]" % (fullyQualifiedName, i), fieldPath, fieldName, type,
-                                                    arrayIdx=i, isBitField=isBitField, startBit=0, bitsLength=8)
+                                                    arrayIdx=i, isBitField=isBitField, startBit=0, bitsLength=8,
+                                                    isPointerType=isPointerType)
                 self.linearFields.append(fieldDescription)
 
     def __createDescriptionDictIfNotAvailable(self, key):
@@ -247,7 +298,11 @@ class LinearStructFieldsToJson:
             if fieldDescription.getFieldPath() not in entries:
                 entries[fieldDescription.getFieldPath()] = []
 
-            fieldTypeName = fieldDescription.getTypeName()
+            fieldTypeName = None
+            if fieldDescription.isPointerType():
+                fieldTypeName = "<pointerType>"
+            else:
+                fieldTypeName = fieldDescription.getTypeName()
 
             if fieldDescription.isBitField():
                 type = NativeTypeToSimulatorBitfieldType[fieldDescription.getTypeName()]
@@ -265,7 +320,6 @@ class LinearStructFieldsToJson:
                     except KeyError as ke:
                         print("key %s does not exist" % field)
                         raise ke
-
 
                 type = nativeTypeToSimulatorType[fieldTypeName]
 
@@ -410,12 +464,14 @@ def aggregateToJsonDumpableDescription(structsObject, enumsObject):
 
     return jsonDescription
 
-def simulatorToSize (simulatorType, nativeToSimulator, nativeToSize):
+
+def simulatorToSize(simulatorType, nativeToSimulator, nativeToSize):
     for nativeType in nativeToSimulator:
         if nativeToSimulator[nativeType] == simulatorType:
             for nativeToSizeKey in nativeToSize:
                 if nativeToSizeKey == nativeType:
                     return nativeToSize[nativeToSizeKey]
+
 
 if __name__ == "__main__":
     structs, parsedEnums = parseEnumTypesAndStructs()
@@ -438,4 +494,3 @@ if __name__ == "__main__":
     print("Total struct size: %s Bytes" % totalSize)
     # print(json.dumps(jsonDescription, sort_keys=False, indent=2, separators=(',', ': ')))
     Gui(json.dumps(jsonDescription, sort_keys=False, indent=2, separators=(',', ': ')))
-

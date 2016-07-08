@@ -82,6 +82,7 @@ class CTypesParser:
 
         for fileName in configModule.sourceRoots:
             self.asts.append(parse_file(fileName, use_cpp=True, cpp_path=cpp_path, cpp_args=cpp_args))
+            pass
 
     def getEntities(self,  visitor=EnumDeclVisitor()):
         for ast in self.asts:
