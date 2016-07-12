@@ -104,9 +104,6 @@ TypeOverrides = [
         "newType": "unsigned"
     },
 
-
-
-
 ]
 
 # infers an extra register description for the 2nd byte of 2 byte length types, i.e. uint16_t
@@ -129,18 +126,17 @@ Infer2ndByteExceptions = [
         "property": "xmissionState",
         "type": "XmissionType",
     },
-
     {
         "property": "initiatorState",
         "type": "CommunicationInitiatorStateTypes",
     },
-
     {
         "property": "receptionistState",
         "type": "CommunicationReceptionistStateTypes"
     },
 
-
+    { "property" : "executionState",
+      "type" : "ActuationStateType"},
 
 ]
 
