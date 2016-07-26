@@ -21,6 +21,3 @@ Output adjustments and overrides can be configured in
 The source file directory may be adjusted in 
 
     SourceConfig.py
-
-
-    
