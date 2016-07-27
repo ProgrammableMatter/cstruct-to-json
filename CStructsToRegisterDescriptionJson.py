@@ -410,7 +410,7 @@ class Gui:
     def __init__(self, txt):
         self.rootWindow = Tk()
         self.rootWindow.resizable(True, False)
-        self.rootWindow.title("content it copied to clipboard")
+        self.rootWindow.title("content is copied to clipboard")
 
         self.rootWindow.clipboard_clear()
         self.rootWindow.clipboard_append(txt)
