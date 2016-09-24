@@ -319,7 +319,8 @@ class LinearStructFieldsToJson:
                         property = structFields[field][0].getFieldName()
                     except KeyError as ke:
                         print("key %s does not exist" % field)
-                        raise ke
+                        # raise ke
+                        pass
 
                 type = nativeTypeToSimulatorType[fieldTypeName]
 

@@ -34,6 +34,7 @@ NativeTypeToSimulatorType = {
     "dhex": "dhex",
     "hex16": "hex16",
     "<pointerType>" : "hex16",
+    "float": "hex32",
 }
 
 Infer2ndByteSimulatorTypeToNextSmallerType = {
@@ -50,6 +51,7 @@ NativeTypeToSize = {
     "int8_t": 1,
     "uint16_t": 2,
     "int16_t": 2,
+    "float": 4,
     "<pointerType>": 2,
 }
 
@@ -134,10 +136,30 @@ Infer2ndByteExceptions = [
         "property": "receptionistState",
         "type": "CommunicationReceptionistStateTypes"
     },
-
-    { "property" : "executionState",
-      "type" : "ActuationStateType"},
-
+    {
+        "property" : "executionState",
+        "type" : "ActuationStateType"
+    },
+    {
+        "property": "blinkAddressState",
+        "type": "AddressBlinkStates"
+    },
+    {
+        "property": "blinkState",
+        "type": "TimeIntervalBlinkStates"
+    },
+    {
+        "property": "k",
+        "type": "float"
+    },
+    {
+        "property": "d",
+        "type": "float"
+    },
+    {
+        "property": "variance",
+        "type": "float"
+    },
 ]
 
 HardwareRegisters = OrderedDict({
