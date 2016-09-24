@@ -33,7 +33,7 @@ NativeTypeToSimulatorType = {
     "char": "char",
     "dhex": "dhex",
     "hex16": "hex16",
-    "<pointerType>" : "hex16",
+    "<pointerType>": "hex16",
     "float": "hex32",
 }
 
@@ -137,8 +137,8 @@ Infer2ndByteExceptions = [
         "type": "CommunicationReceptionistStateTypes"
     },
     {
-        "property" : "executionState",
-        "type" : "ActuationStateType"
+        "property": "executionState",
+        "type": "ActuationStateType"
     },
     {
         "property": "blinkAddressState",
