@@ -28,9 +28,7 @@ class EnumsToJson:
     def getEnumNames(self):
         return self.enums["enums"].keys()
 
+
 if __name__ == "__main__":
     etj = EnumsToJson()
     etj.show()
-
-
-

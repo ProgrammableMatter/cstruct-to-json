@@ -68,7 +68,8 @@ def traverseStructMembersDF(structs, nativeTypesToSize, enumTypesToValue, rootSt
 
         isPointerType = isPointerType = type(structSubDecl.type) == c_ast.PtrDecl
         if structSubDeclTypeName in nativeTypesToSize.keys() or \
-                        structSubDeclTypeName in enumTypesToValue.keys() or (isPointerType == True):  # on enum/native type
+                        structSubDeclTypeName in enumTypesToValue.keys() or (
+            isPointerType == True):  # on enum/native type
             bitSize = None
             if isPointerType:
                 bitSize = None

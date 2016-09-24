@@ -1,9 +1,11 @@
 import sys
-from config import SourceConfig as sourceConfig
 
 from pycparser import parse_file, c_ast
 
+from config import SourceConfig as sourceConfig
+
 Verbose = False
+
 
 class StructDeclVisitor(c_ast.NodeVisitor):
     def __init__(self):
@@ -26,7 +28,8 @@ class StructDeclVisitor(c_ast.NodeVisitor):
             for structSubDecl in self.structDecls[structDecl]:
                 if structSubDecl.bitsize != None:
                     print("  -- %s <%s:%s>" % (
-                    structSubDecl.name, StructDeclVisitor.getStructTypeName(structSubDecl), structSubDecl.bitsize.value))
+                        structSubDecl.name, StructDeclVisitor.getStructTypeName(structSubDecl),
+                        structSubDecl.bitsize.value))
                 else:
                     print("  -- %s <%s>" % (structSubDecl.name, StructDeclVisitor.getStructTypeName(structSubDecl)))
 
@@ -84,12 +87,12 @@ class CTypesParser:
             self.asts.append(parse_file(fileName, use_cpp=True, cpp_path=cpp_path, cpp_args=cpp_args))
             pass
 
-    def getEntities(self,  visitor=EnumDeclVisitor()):
+    def getEntities(self, visitor=EnumDeclVisitor()):
         for ast in self.asts:
             visitor.visit(ast)
         return visitor.getEnums()
 
-    def showEntities(self,  visitor=EnumDeclVisitor()):
+    def showEntities(self, visitor=EnumDeclVisitor()):
         for ast in self.asts:
             visitor.visit(ast)
         visitor.show()
@@ -113,4 +116,3 @@ if __name__ == "__main__":
     # ctp.getEntities(StructDeclVisitor())
     if Verbose:
         ctp.showEntities(StructDeclVisitor())
-
