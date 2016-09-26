@@ -6,7 +6,8 @@ from pycparser import c_ast
 
 from config import JsonConfig
 from config.JsonConfig import NativeTypeToSimulatorType, NativeTypeToSize, DefaultEnumByteSize, TypeOverrides, \
-    Infer2ndByteExceptions, Infer2ndByte, Infer2ndByteSimulatorTypeToNextSmallerType, NativeTypeToSimulatorBitfieldType
+    Infer2ndByteExceptions, Infer2ndByte, Infer2ndByteSimulatorTypeToNextSmallerType, NativeTypeToSimulatorBitfieldType, \
+    InferUpTo4thByte, InferUpTo4thByteExceptions
 from parsing.EnumsToJson import EnumsToJson
 from parsing.ParseCTypes import CTypesParser, StructDeclVisitor, EnumDeclVisitor
 
@@ -249,6 +250,8 @@ class LinearStructComposer:
 class LinearStructFieldsToJson:
     jsonSource = None
     doInfer2ndByteFromUint16_t = Infer2ndByte
+    doInferUpTo4thByte = InferUpTo4thByte
+
 
     def __init__(self):
         pass
@@ -289,6 +292,28 @@ class LinearStructFieldsToJson:
             entries[fieldDescription.getFieldPath()].append(
                 {"property": newProperty, "type": newType, "address": newAddress})
 
+
+    def __inferUpTo4ThByte(self, startAddressLabel, addressOffet, property, fieldDescription, entries, type,
+                       nativeTypeToSize):
+        if self.doInfer2ndByteFromUint16_t and \
+                    fieldDescription.getTypeName() in nativeTypeToSize and \
+                    4 == nativeTypeToSize[fieldDescription.getTypeName()]:
+            for exception in InferUpTo4thByteExceptions:
+                if exception["property"] == property and exception["type"] == type:
+                    return
+
+            for idx in range(1,4):
+                newProperty = property + "["+str(idx)+"]"
+                if startAddressLabel != "":
+                    newAddress = startAddressLabel + "+" + str(addressOffet + idx)
+                else:
+                    newAddress = addressOffet + idx
+
+                newType = type + "[" + str(idx) + "]"
+                entries[fieldDescription.getFieldPath()].append(
+                    {"property": newProperty, "type": newType, "address": newAddress})
+
+
     def toJson(self, structFields, nativeTypeToSize={}, nativeTypeToSimulatorType={}, startAddressLabel=""):
 
         addressOffet = 0
@@ -326,6 +351,8 @@ class LinearStructFieldsToJson:
                 type = nativeTypeToSimulatorType[fieldTypeName]
 
             self.__infer2ndByte(startAddressLabel, addressOffet, property, fieldDescription, entries,
+                                type, nativeTypeToSize)
+            self.__inferUpTo4ThByte(startAddressLabel, addressOffet, property, fieldDescription, entries,
                                 type, nativeTypeToSize)
 
             if startAddressLabel != "":

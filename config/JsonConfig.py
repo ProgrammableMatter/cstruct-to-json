@@ -34,7 +34,9 @@ NativeTypeToSimulatorType = {
     "dhex": "dhex",
     "hex16": "hex16",
     "<pointerType>": "hex16",
-    "float": "hex32",
+    "float": "float32", # infers float32, float32[1],float32[2] and float32[3] which are handled exceptional by the sim.
+    "int32_t":"int32", # infers int32, int32[1], ...
+    "uint32_t":"uint32", # infers uint32, uint32[1], ...
 }
 
 Infer2ndByteSimulatorTypeToNextSmallerType = {
@@ -52,6 +54,8 @@ NativeTypeToSize = {
     "uint16_t": 2,
     "int16_t": 2,
     "float": 4,
+    "int32_t": 4,
+    "uint32_t": 4,
     "<pointerType>": 2,
 }
 
@@ -111,7 +115,19 @@ TypeOverrides = [
 # infers an extra register description for the 2nd byte of 2 byte length types, i.e. uint16_t
 Infer2ndByte = True
 
+# infers extra register descriptions of 4 byte length types, i.e. u/int32, float
+InferUpTo4thByte = True
+
 # inference exceptions
+InferUpTo4thByteExceptions = [
+    {
+        # do not infer 2nd byte if a field's property contains this property,
+        "property": "state",
+        # and has the simulator type contains type
+        "type": "StateType",
+    },
+    ]
+        # inference exceptions
 Infer2ndByteExceptions = [
     {
         # do not infer 2nd byte if a field's property contains this property,
@@ -147,18 +163,6 @@ Infer2ndByteExceptions = [
     {
         "property": "blinkState",
         "type": "TimeIntervalBlinkStates"
-    },
-    {
-        "property": "k",
-        "type": "float"
-    },
-    {
-        "property": "d",
-        "type": "float"
-    },
-    {
-        "property": "variance",
-        "type": "float"
     },
 ]
 
