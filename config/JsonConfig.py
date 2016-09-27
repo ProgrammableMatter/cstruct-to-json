@@ -25,25 +25,26 @@ NativeTypeToSimulatorBitfieldType = {
 NativeTypeToSimulatorType = {
     "bitfield": "bit",
     "dbitfield": "dbit",
-    "uint8_t": "hex",
-    "int8_t": "hex",
-    "hex": "hex",
-    "uint16_t": "unsigned int",
-    "int16_t": "signed int",
     "char": "char",
+    "hex": "hex",
+    "uint8_t": "uint8_t",
+    "int8_t": "int8_t",
+    "uint16_t": "uint16_t",
+    "int16_t": "int16_t",
     "dhex": "dhex",
     "hex16": "hex16",
     "<pointerType>": "hex16",
-    "float": "float32", # infers float32, float32[1],float32[2] and float32[3] which are handled exceptional by the sim.
-    "int32_t":"int32", # infers int32, int32[1], ...
-    "uint32_t":"uint32", # infers uint32, uint32[1], ...
+    "float": "float32",
+# infers float32, float32[1],float32[2] and float32[3] which are handled exceptional by the sim.
+    "int32_t": "int32_t",  # infers int32, int32[1], ...
+    "uint32_t": "uint32_t",  # infers uint32, uint32[1], ...
 }
 
 Infer2ndByteSimulatorTypeToNextSmallerType = {
     "dbit": "bit",
     "dhex": "hex",
-    "unsigned int": "unsigned",
-    "signed int": "signed",
+    "uint16_t": "hex",
+    "int16_t": "hex",
     "16hex": "hex",
 }
 
@@ -62,12 +63,18 @@ NativeTypeToSize = {
 TypeOverrides = [
     {
         # if a field's property contains this property,
-        "property": "magicEndByte",
+        "property": "__structStartMarker",
         # and has the simulator type equals oldType
-        "oldType": "hex",
+        "oldType": "uint8_t",
         # the type is overridden with newType
         "newType": "hex",
-    }, {
+    },
+    {
+        "property": "__structEndMarker",
+        "oldType": "uint8_t",
+        "newType": "hex",
+    },
+    {
         "property": "row",
         "oldType": "hex",
         "newType": "unsigned",
@@ -126,8 +133,8 @@ InferUpTo4thByteExceptions = [
         # and has the simulator type contains type
         "type": "StateType",
     },
-    ]
-        # inference exceptions
+]
+# inference exceptions
 Infer2ndByteExceptions = [
     {
         # do not infer 2nd byte if a field's property contains this property,
@@ -338,34 +345,34 @@ HardwareRegisters = OrderedDict({
             }
         ],
         # /* state in timer/counter1 compare register high byte */
-        "OCR1AH": [
-            {
-                "property": "",
-                "type": "hex",
-                "address": 75
-            }
-        ],
+        # "OCR1AH": [
+        #     {
+        #         "property": "",
+        #         "type": "hex",
+        #         "address": 75
+        #     }
+        # ],
         # /* state in timer/counter1 compare register low byte */
-        "OCR1AL": [
+        "OCR1A": [
             {
                 "property": "",
-                "type": "hex",
+                "type": "uint16_t",
                 "address": 74
             }
         ],
         # /* state in timer/counter1 compare register high byte*/
-        "OCR1BH": [
-            {
-                "property": "",
-                "type": "hex",
-                "address": 73
-            }
-        ],
+        # "OCR1BH": [
+        #     {
+        #         "property": "",
+        #         "type": "hex",
+        #         "address": 73
+        #     }
+        # ],
         # /* state in timer/counter1 compare register low byte*/
-        "OCR1BL": [
+        "OCR1B": [
             {
                 "property": "",
-                "type": "hex",
+                "type": "uint16_t",
                 "address": 72
             }
         ],
@@ -373,7 +380,7 @@ HardwareRegisters = OrderedDict({
         "OCR0": [
             {
                 "property": "",
-                "type": "hex",
+                "type": "uint8_t",
                 "address": 92
             }
         ],
