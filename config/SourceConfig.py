@@ -20,7 +20,11 @@ sourceRoots = [
     __homeDir + "/" + __subDir + "/avr-common/utils/uc-core/communication-protocol/CommunicationProtocolTypes.h",
     __homeDir + "/" + __subDir + "/avr-common/utils/uc-core/communication/ManchesterDecodingTypes.h",
     __homeDir + "/" + __subDir + "/avr-common/utils/uc-core/communication/CommunicationTypes.h",
+
+    __homeDir + "/" + __subDir + "/avr-common/utils/uc-core/synchronization/LeastSquareRegressionTypes.h",
+    __homeDir + "/" + __subDir + "/avr-common/utils/uc-core/synchronization/SampleFifoTypes.h",
     __homeDir + "/" + __subDir + "/avr-common/utils/uc-core/synchronization/SynchronizationTypes.h",
+
     __homeDir + "/" + __subDir + "/avr-common/utils/uc-core/periphery/PeripheryTypes.h",
     __homeDir + "/" + __subDir + "/avr-common/utils/uc-core/particle/ParticleStateTypes.h",
 ]
