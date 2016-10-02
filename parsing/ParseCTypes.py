@@ -31,7 +31,10 @@ class StructDeclVisitor(c_ast.NodeVisitor):
                         structSubDecl.name, StructDeclVisitor.getStructTypeName(structSubDecl),
                         structSubDecl.bitsize.value))
                 else:
-                    print("  -- %s <%s>" % (structSubDecl.name, StructDeclVisitor.getStructTypeName(structSubDecl)))
+                    dimension = ""
+                    if hasattr(structSubDecl.type, "dim"):
+                        dimension = "[%s]" % int(structSubDecl.type.dim.value)
+                    print("  -- %s %s <%s>" % (structSubDecl.name, dimension, StructDeclVisitor.getStructTypeName(structSubDecl)))
 
     @staticmethod
     def getStructTypeName(structSubDecl):
